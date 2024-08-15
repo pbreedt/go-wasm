@@ -1,0 +1,49 @@
+<!doctype html>
+<html>  
+    <head>
+        <meta charset="utf-8"/>
+        <script src="wasm_exec.js"></script>
+        <script>
+            const go = new Go();
+            WebAssembly.instantiateStreaming(fetch("json.wasm"), go.importObject).then((result) => {
+                go.run(result.instance);
+            });
+        </script>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <script src="https://unpkg.com/typed.js@2.0.16/dist/typed.umd.js"></script>
+        
+    </head>
+    <body>
+        
+        <!-- <textarea 
+        style="background-color: black;color: green;"
+        id="jsoninput" name="jsoninput" cols="80" rows="20" onkeypress="if(event.keyCode==13){json(jsoninput.value)}" ></textarea>
+        -->
+         <!-- <input id="button" type="submit" name="button" value="pretty json" onclick="json(jsoninput.value)"/> -->
+        <!-- <textarea id="jsonoutput" name="jsonoutput" cols="80" rows="20"></textarea> -->
+
+        <!--
+        <div class="terminal-window mx-2 w-full xl:w-4/5 p-6 text-base sm:text-sm md:text-base rounded-md shadow-2xl bg-gray-800 max-h-80">
+            <div class="relative">
+                <div class="absolute -top-5 -right-5">
+                    < !-- Close button -- >
+                    <button title="Close" class="text-gray-600 w-8 h-8 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+            </div>
+            <pre class="text-gray-300 whitespace-pre" id="terminal-output"></pre>
+        </div>
+        -->
+            <textarea
+            class="text-gray-300 whitespace-pre terminal-window mx-2 w-full xl:w-4/5 p-6 text-base sm:text-sm md:text-base rounded-md shadow-2xl bg-gray-800 max-h-80"
+            id="jsoninput" name="jsoninput" cols="80" rows="10" onkeypress="if(event.keyCode==13){json(jsoninput.value)}" ></textarea>
+
+    </body>
+    <script>
+        var json = function(input) {
+            // jsonoutput.value = formatJSON(input)
+            jsoninput.value = jsoninput.value + "\n" + formatJSON(input)
+        }
+     </script>
+</html>
