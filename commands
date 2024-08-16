@@ -1,4 +1,4 @@
 compile go to wasm
-~/dev/code/webassembly/go-wasm/cmd/wasm GOOS=js GOARCH=wasm go build -o  ../../assets/json.wasm
+~/dev/code/webassembly/go-wasm/cmd/wasm GOOS=js GOARCH=wasm go build -o  ../../assets/go.wasm
 run web server (serving assets)
 ~/dev/code/webassembly/go-wasm/cmd/server go run main.go
