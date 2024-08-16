@@ -1,68 +1,108 @@
 package main
 
 import (
-	"encoding/json"
+	_ "embed"
 	"fmt"
-	"net"
+	"io"
 	"net/http"
+	"strings"
 	"syscall/js"
 )
 
+//go:embed main.go
+var source string
+
 func main() {
 	fmt.Println("Go Web Assembly")
-	js.Global().Set("formatJSON", jsonWrapper())
-	// <-make(chan struct{})
-
-	port := 9091
-	// port, err := GetFreePort()
-	// if err != nil {
-	// 	fmt.Println("Failed to get free port for server", err)
-	// 	return
-	// }
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), http.FileServer(http.Dir("../../assets")))
-	if err != nil {
-		fmt.Println("Failed to start server", err)
-		return
-	}
+	js.Global().Set("execGo", exec())
+	<-make(chan struct{})
 }
 
-func prettyJson(input string) (string, error) {
-	var raw any
-	if err := json.Unmarshal([]byte(input), &raw); err != nil {
-		return "", err
-	}
-	pretty, err := json.MarshalIndent(raw, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(pretty), nil
-}
-
-func jsonWrapper() js.Func {
-	jsonFunc := js.FuncOf(func(this js.Value, args []js.Value) any {
-		if len(args) != 1 {
+func exec() js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		if len(args) != 2 {
 			return "Invalid no of arguments passed"
 		}
-		inputJSON := args[0].String()
-		fmt.Printf("wasm input %s\n", inputJSON)
-		pretty, err := prettyJson(inputJSON)
-		if err != nil {
-			fmt.Printf("unable to convert to json %s\n", err)
-			return err.Error()
+
+		prompt := args[0].String()
+		text := args[1].String()
+
+		lines := strings.Split(text, "\n")
+		lastLine := lines[len(lines)-1]
+		lastLineNoPrompt := lastLine[len(prompt):]
+		command := lastLineNoPrompt
+		newInput := ""
+		if strings.Contains(lastLineNoPrompt, " ") {
+			command = lastLineNoPrompt[:strings.Index(lastLineNoPrompt, " ")]
+			newInput = lastLineNoPrompt[strings.Index(lastLineNoPrompt, " ")+1:]
 		}
-		return pretty
+
+		// fmt.Printf("wasm prompt:'%s' | last-line-no-prompt:'%s' | command:'%s' | input:'%s'\n", prompt, lastLineNoPrompt, command, newInput)
+
+		return process(text, prompt, command, newInput)
 	})
-	return jsonFunc
 }
 
-func GetFreePort() (port int, err error) {
-	var a *net.TCPAddr
-	if a, err = net.ResolveTCPAddr("tcp", "localhost:0"); err == nil {
-		var l *net.TCPListener
-		if l, err = net.ListenTCP("tcp", a); err == nil {
-			defer l.Close()
-			return l.Addr().(*net.TCPAddr).Port, nil
-		}
+func process(originalText, prompt, command, newInput string) string {
+	switch command {
+	case "clear":
+		return prompt
+	case "profile":
+		return addNewInputToEnd(originalText, profile(), prompt)
+	case "source":
+		return addNewInputToEnd(originalText, source, prompt)
+	case "upper":
+		return addNewInputToEnd(originalText, toUpper(newInput), prompt)
+	default:
+		return addNewInputToEnd(originalText, help(), prompt)
 	}
-	return
+}
+
+func profile() string {
+	return `Profile: Petrus Breedt
+    - education : B.Sc Information Technology (University of Johannesburg, South Africa)
+    - job title : Software Architect
+    - skills    : Software development (Go, Java)
+                  Requirements Analysis
+                  Solution Design
+                  Team lead & mentor`
+}
+
+func addNewInputToEnd(originalText, processedText, prompt string) string {
+	return originalText + "\n" + processedText + "\n" + prompt
+}
+
+func toUpper(input string) string {
+	return strings.ToUpper(input)
+}
+
+func help() string {
+	return `
+Usage: command [input...]
+
+commands:
+	help    : displays this message
+	clear   : clears the screen
+	upper   : returns uppercase of the input
+	profile : displays user profile
+	source  : displays site's Go source code`
+}
+
+func readFile(filename string) (string, error) {
+	resp, err := http.Get("http://localhost:9090/" + filename)
+	if err != nil {
+		return "", fmt.Errorf("GET error: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("Status error: %v", resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("Read body: %v", err)
+	}
+
+	return string(data), nil
 }
