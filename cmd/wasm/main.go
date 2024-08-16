@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 	"syscall/js"
+
+	"github.com/pbreedt/go-wasm/pkg/parser"
 )
 
 //go:embed main.go
@@ -27,17 +29,7 @@ func exec() js.Func {
 		prompt := args[0].String()
 		text := args[1].String()
 
-		lines := strings.Split(text, "\n")
-		lastLine := lines[len(lines)-1]
-		lastLineNoPrompt := lastLine[len(prompt):]
-		command := lastLineNoPrompt
-		newInput := ""
-		if strings.Contains(lastLineNoPrompt, " ") {
-			command = lastLineNoPrompt[:strings.Index(lastLineNoPrompt, " ")]
-			newInput = lastLineNoPrompt[strings.Index(lastLineNoPrompt, " ")+1:]
-		}
-
-		// fmt.Printf("wasm prompt:'%s' | last-line-no-prompt:'%s' | command:'%s' | input:'%s'\n", prompt, lastLineNoPrompt, command, newInput)
+		_, _, command, newInput := parser.ParseInput(prompt, text)
 
 		return process(text, prompt, command, newInput)
 	})

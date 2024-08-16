@@ -1,25 +1,27 @@
 package main
 
 import (
-	"fmt"
-	"strings"
 	"testing"
+
+	"github.com/pbreedt/go-wasm/pkg/parser"
 )
 
 func TestProcess(t *testing.T) {
 	prompt := "prompt: "
 
 	tests := []struct {
+		name     string
 		fullText string
 		command  string
 		newInput string
 	}{
-		{"prompt: command", "command", ""},
-		{"prompt: command with input", "command", "with input"},
-		{"prompt: ", "", ""},
+		{"single command", "prompt: command", "command", ""},
+		{"command with input", "prompt: command with input", "command", "with input"},
+		{"no command", "prompt: ", "", ""},
 	}
 
 	for _, tc := range tests {
+		t.Log("testing:", tc.name)
 		a := []string{prompt, tc.fullText}
 		p, _, c, n := processTest(a)
 
@@ -41,17 +43,5 @@ func processTest(args []string) (string, string, string, string) {
 	prompt := args[0]
 	text := args[1]
 
-	lines := strings.Split(text, "\n")
-	lastLine := lines[len(lines)-1]
-	lastLineNoPrompt := lastLine[len(prompt):]
-	command := lastLineNoPrompt
-	newInput := ""
-	if strings.Contains(lastLineNoPrompt, " ") {
-		command = lastLineNoPrompt[:strings.Index(lastLineNoPrompt, " ")]
-		newInput = lastLineNoPrompt[strings.Index(lastLineNoPrompt, " ")+1:]
-	}
-
-	fmt.Printf("wasm prompt:'%s' | last-line-no-prompt:'%s' | command:'%s' | input:'%s'\n", prompt, lastLineNoPrompt, command, newInput)
-
-	return prompt, lastLineNoPrompt, command, newInput
+	return parser.ParseInput(prompt, text)
 }
