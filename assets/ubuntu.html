@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- CREDIT: https://github.com/fobabs/ubuntu-terminal -->
 <html>
   <head>
     <meta charset="utf-8">
@@ -18,20 +19,71 @@
             <button class="bar__button">&#9472;</button>
             <button class="bar__button">&#9723;</button>
           </div>
-          <p id="bar__user">fobabs@ubuntu: ~</p>
+          <p id="bar__user">guest@ubuntu: ~</p>
         </section>
         <!-- Terminal Body -->
         <!-- <textarea class="terminal" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" id="terminal" cols="100" rows="100"></textarea> -->
-
         <section id="terminal__body">
           <div id="terminal__prompt">
-            <span id="terminal__prompt--user">fobabs@ubuntu:</span>
+            <span id="terminal__prompt--user">guest@ubuntu:</span>
             <span id="terminal__prompt--location">~</span>
-            <span id="terminal__prompt--bling">$</span>
+            <span id="terminal__prompt--bling">$&nbsp;</span>
+            <span id="terminal__txt"></span>
             <span id="terminal__prompt--cursor"></span>
           </div>
         </section>
       </div>
     </main>
   </body>
+
+  <script src="wasm_exec.js"></script>
+  <script>
+    const go = new Go();
+    WebAssembly.instantiateStreaming(fetch("go.wasm"), go.importObject).then((result) => {
+      go.run(result.instance);
+    });
+
+    var input = "";
+    var terminal = document.getElementById("terminal__body");
+    var cursor = document.getElementById("terminal__prompt--cursor");
+
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') {
+        exec(input);
+        input = "";
+        terminal.scrollTop = terminal.scrollHeight;
+      } else if ( (event.keyCode == 8) || (event.keyCode == 32) || (event.keyCode >= 48 && event.keyCode <= 90)) {
+        input += event.key;
+        var termTxt = document.getElementById("terminal__txt");
+        if  (event.keyCode == 32) {
+          termTxt.innerHTML += "&nbsp;"
+        } else if (event.keyCode == 8){
+          termTxt.innerHTML = termTxt.innerHTML.substring(0, termTxt.innerHTML.length - 1);
+        } else {
+          termTxt.innerHTML += event.key;
+        }
+      }
+      console.log(input, event.keyCode);
+    });
+
+    var exec = function(input) {
+      // console.log("web input:", input)
+
+      var oldHtml = terminal.innerHTML;
+      var newHtml = oldHtml.replace('<span id="terminal__prompt--cursor"></span>','');
+      newHtml = newHtml.replace('id="terminal__txt"','id="terminal__prompt--bling"');
+      newHtml = newHtml.replace('id="terminal__output"','id="terminal__prompt--bling"');
+      terminal.innerHTML = newHtml + `
+          <div id="terminal__output"></div>
+          <div id="terminal__prompt">
+            <span id="terminal__prompt--user">guest@ubuntu:</span>
+            <span id="terminal__prompt--location">~</span>
+            <span id="terminal__prompt--bling">$&nbsp;</span>
+            <span id="terminal__txt"></span>
+            <span id="terminal__prompt--cursor"></span>
+          </div>`;
+      var termOutTxt = document.getElementById("terminal__output");
+      termOutTxt.innerHTML = "<pre>" + execGoUbuntu(input) + "</pre>";
+    }
+  </script>
 </html>

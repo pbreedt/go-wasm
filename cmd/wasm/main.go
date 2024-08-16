@@ -17,6 +17,7 @@ var source string
 func main() {
 	fmt.Println("Go Web Assembly")
 	js.Global().Set("execGo", exec())
+	js.Global().Set("execGoUbuntu", execUbuntu())
 	<-make(chan struct{})
 }
 
@@ -97,4 +98,18 @@ func readFile(filename string) (string, error) {
 	}
 
 	return string(data), nil
+}
+
+// Ubuntu sets prompt in HTML
+func execUbuntu() js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		if len(args) != 1 {
+			return "Invalid no of arguments passed"
+		}
+
+		text := args[0].String()
+		_, _, command, newInput := parser.ParseInput("", text)
+
+		return process("", "", command, newInput)
+	})
 }
