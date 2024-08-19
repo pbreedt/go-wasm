@@ -70,6 +70,9 @@
       // console.log("web input:", input)
 
       var oldHtml = terminal.innerHTML;
+      if (input == "clear") {
+        oldHtml = "" // don't add history
+      }
       var newHtml = oldHtml.replace('<span id="terminal__prompt--cursor"></span>','');
       newHtml = newHtml.replace('id="terminal__txt"','id="terminal__prompt--bling"');
       newHtml = newHtml.replace('id="terminal__output"','id="terminal__prompt--bling"');
@@ -83,7 +86,11 @@
             <span id="terminal__prompt--cursor"></span>
           </div>`;
       var termOutTxt = document.getElementById("terminal__output");
-      termOutTxt.innerHTML = "<pre>" + execGoUbuntu(input) + "</pre>";
+      if (input == "clear") {
+        termOutTxt.innerHTML = "";
+      } else {
+        termOutTxt.innerHTML = "<pre>" + execGoUbuntu(input) + "</pre>";
+      }      
     }
   </script>
 </html>

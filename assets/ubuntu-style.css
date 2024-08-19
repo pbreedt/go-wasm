@@ -62,7 +62,9 @@ body {
   background: linear-gradient(#f37458 0%, #de4c12 100%);
   background-clip: padding-box;
 }
-
+pre {
+  margin: 0;
+}
 #bar__user {
   color: #d5d0ce;
   margin-left: 6px;
